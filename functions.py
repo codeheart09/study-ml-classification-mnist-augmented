@@ -1,6 +1,7 @@
 from sklearn.datasets import fetch_openml
 from sklearn.model_selection import GridSearchCV
 import numpy as np
+from scipy.ndimage.interpolation import shift
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import accuracy_score
 
@@ -20,6 +21,31 @@ def convert_label_type(labels):
 
 def split_train_test(features, labels):
     return features.iloc[:60000], features.iloc[60000:], labels[:60000], labels[60000:]
+
+
+def augment_train_set(features, labels):
+    shifted_features = []
+    shifted_labels = []
+
+    for row in features.itertuples():
+        image = np.array(list(row)).reshape(28, 28)
+        shifted1 = shift(image, [1, 0], cval=0)
+        shifted2 = shift(image, [-1, 0], cval=0)
+        shifted3 = shift(image, [0, 1], cval=0)
+        shifted4 = shift(image, [0, -1], cval=0)
+        shifted_features.append(shifted1.flatten())
+        shifted_features.append(shifted2.flatten())
+        shifted_features.append(shifted3.flatten())
+        shifted_features.append(shifted4.flatten())
+        shifted_labels.append(labels[row.Index])
+        shifted_labels.append(labels[row.Index])
+        shifted_labels.append(labels[row.Index])
+        shifted_labels.append(labels[row.Index])
+
+    for row in shifted_features:
+        # @todo continue here
+
+
 
 
 def train_model(features, labels):
