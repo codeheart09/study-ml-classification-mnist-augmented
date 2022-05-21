@@ -1,9 +1,16 @@
 from sklearn.datasets import fetch_openml
 from sklearn.model_selection import GridSearchCV
 import numpy as np
+import pandas as pd
 from scipy.ndimage.interpolation import shift
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import accuracy_score
+
+
+def lab():
+    df = pd.DataFrame({'a': [1, 2, 3, 4, 5, 6], 'b': [9, 8, 7, 6, 5, 4]})
+    for idx, row in df.iterrows():
+        print(row)
 
 
 def get_dataset():
@@ -23,29 +30,35 @@ def split_train_test(features, labels):
     return features.iloc[:60000], features.iloc[60000:], labels[:60000], labels[60000:]
 
 
+def shift_image(image, dx, dy):
+    image = image.reshape((28, 28))
+    shifted_image = shift(image, [dy, dx], cval=0, mode='constant')
+    return shifted_image.reshape([-1])
+
+
 def augment_train_set(features, labels):
-    shifted_features = []
-    shifted_labels = []
+    print('')
+    print('*** Augmenting train set...')
 
-    for row in features.itertuples():
-        image = np.array(list(row)).reshape(28, 28)
-        shifted1 = shift(image, [1, 0], cval=0)
-        shifted2 = shift(image, [-1, 0], cval=0)
-        shifted3 = shift(image, [0, 1], cval=0)
-        shifted4 = shift(image, [0, -1], cval=0)
-        shifted_features.append(shifted1.flatten())
-        shifted_features.append(shifted2.flatten())
-        shifted_features.append(shifted3.flatten())
-        shifted_features.append(shifted4.flatten())
-        shifted_labels.append(labels[row.Index])
-        shifted_labels.append(labels[row.Index])
-        shifted_labels.append(labels[row.Index])
-        shifted_labels.append(labels[row.Index])
+    features_np = features.to_numpy()
+    labels_np = labels.to_numpy()
 
-    for row in shifted_features:
-        # @todo continue here
+    features_augmented = [image for image in features_np]
+    labels_augmented = [label for label in labels_np]
 
+    for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+        for image, label in zip(features_np, labels_np):
+            features_augmented.append(shift_image(image, dx, dy))
+            labels_augmented.append(label)
 
+    features_augmented = np.array(features_augmented)
+    labels_augmented = np.array(labels_augmented)
+
+    shuffle_idx = np.random.permutation(len(features_augmented))
+    features_augmented = features_augmented[shuffle_idx]
+    labels_augmented = labels_augmented[shuffle_idx]
+
+    return features_augmented, labels_augmented
 
 
 def train_model(features, labels):
